@@ -1,7 +1,11 @@
-node_modules/
-.next/
+node_modules
+.next
 .env
 .env.local
-.env*.local
 .DS_Store
-npm-debug.log*
+*.log
+tsconfig.tsbuildinfo
+# contact-form messages contain personal data
+data/inbox.json
+data/*.tmp
+.next-build

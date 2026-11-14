@@ -1,53 +1,36 @@
-// Edge-compatible session signing. Do NOT import Node's `crypto` module here
-// because middleware runs in the Edge runtime.
-export const COOKIE_NAME = "vt_admin_session";
+import { SignJWT, jwtVerify } from "jose";
+import bcrypt from "bcryptjs";
+import { cookies } from "next/headers";
 
-function secret() {
-  return process.env.ADMIN_SECRET || "change-this-admin-secret-in-production";
+const cookieName = "vt_admin";
+const secret = new TextEncoder().encode(process.env.AUTH_SECRET || "development-only-change-this-secret-now");
+
+export async function verifyAdmin(email: string, password: string) {
+  const expectedEmail = process.env.ADMIN_EMAIL || "";
+  const expectedPassword = process.env.ADMIN_PASSWORD || "";
+  if (!expectedEmail || !expectedPassword) return false;
+  const emailOk = email.toLowerCase() === expectedEmail.toLowerCase();
+  const passwordOk = expectedPassword.startsWith("$2")
+    ? await bcrypt.compare(password, expectedPassword)
+    : password === expectedPassword;
+  return emailOk && passwordOk;
 }
 
-function bytes(value: string) {
-  return new TextEncoder().encode(value);
+export async function createSession() {
+  const token = await new SignJWT({ role: "admin" }).setProtectedHeader({ alg: "HS256" })
+    .setIssuedAt().setExpirationTime("8h").sign(secret);
+  (await cookies()).set(cookieName, token, { httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: "strict", path: "/", maxAge: 8 * 60 * 60 });
 }
 
-async function hmac(value: string) {
-  const key = await crypto.subtle.importKey(
-    "raw",
-    bytes(secret()),
-    { name: "HMAC", hash: "SHA-256" },
-    false,
-    ["sign"]
-  );
-  const signature = await crypto.subtle.sign("HMAC", key, bytes(value));
-  return Array.from(new Uint8Array(signature))
-    .map((b) => b.toString(16).padStart(2, "0"))
-    .join("");
+export async function isAdmin() {
+  const token = (await cookies()).get(cookieName)?.value;
+  if (!token) return false;
+  try {
+    const { payload } = await jwtVerify(token, secret);
+    return payload.role === "admin";
+  } catch { return false; }
 }
 
-export async function sign(value: string) {
-  return hmac(value);
-}
-
-export async function makeSession(email: string) {
-  return `${email}.${await sign(email)}`;
-}
-
-export async function verifySession(value?: string) {
-  if (!value) return false;
-  const i = value.lastIndexOf(".");
-  if (i < 1) return false;
-
-  const email = value.slice(0, i);
-  const signature = value.slice(i + 1);
-  if (!signature) return false;
-
-  const expected = await sign(email);
-  if (signature.length !== expected.length) return false;
-
-  // Constant-time-ish comparison without Node Buffer/timingSafeEqual.
-  let diff = 0;
-  for (let n = 0; n < expected.length; n++) {
-    diff |= expected.charCodeAt(n) ^ signature.charCodeAt(n);
-  }
-  return diff === 0;
+export async function clearSession() {
+  (await cookies()).set(cookieName, "", { httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: "strict", path: "/", maxAge: 0 });
 }
