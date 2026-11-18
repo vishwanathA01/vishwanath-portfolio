@@ -1,7 +1,7 @@
 "use client";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ArrowRight, BookOpen, Copy, FolderGit2, Github, Hash, Linkedin, Mail, Moon, Search } from "lucide-react";
+import { ArrowRight, BookOpen, Copy, FileText, FolderGit2, Github, Hash, Linkedin, Mail, Moon, Search } from "lucide-react";
 import { toggleTheme } from "@/lib/theme";
 
 type Item = { group: string; label: string; hint?: string; icon: React.ReactNode; run: () => void; keywords?: string };
@@ -61,7 +61,8 @@ export default function CommandPalette({
       { group: "Navigate", label: "All projects", icon: <FolderGit2 size={15} />, run: go("/projects") },
       { group: "Navigate", label: "About — the longer version", icon: <Hash size={15} />, run: go("/about") },
       { group: "Navigate", label: "Now — what I’m focused on", icon: <Hash size={15} />, run: go("/now") },
-      { group: "Navigate", label: "Skills", icon: <Hash size={15} />, run: go("/#skills") },
+      { group: "Navigate", label: "Résumé — printable PDF", icon: <FileText size={15} />, run: go("/resume"), keywords: "cv resume pdf download" },
+      { group: "Navigate", label: "Skills & toolkit", icon: <Hash size={15} />, run: go("/#skills"), keywords: "tech stack" },
       { group: "Navigate", label: "Journey", icon: <Hash size={15} />, run: go("/#journey") },
       { group: "Navigate", label: "Blog", icon: <BookOpen size={15} />, run: go("/blog") },
       { group: "Navigate", label: "Contact", icon: <Mail size={15} />, run: go("/contact") },

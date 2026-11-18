@@ -66,7 +66,7 @@ export default async function AboutPage() {
           </div>
           <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
             <Link className="btn btn-sm" href="/contact">Work with me <ArrowUpRight size={14} /></Link>
-            {settings.resume && <a className="btn btn-ghost btn-sm" href={settings.resume} target="_blank" rel="noreferrer"><Download size={14} /> Résumé</a>}
+            <Link className="btn btn-ghost btn-sm" href="/resume"><Download size={14} /> Résumé</Link>
           </div>
         </aside>
       </div>

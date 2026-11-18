@@ -1,0 +1,13 @@
+# Never upload local secrets or private data with `vercel deploy`
+.env*
+!.env.example
+data/inbox.json
+data/*.tmp
+.claude
+.vercel
+.next
+.next-build
+node_modules
+*.log
+tsconfig.tsbuildinfo
+.DS_Store
