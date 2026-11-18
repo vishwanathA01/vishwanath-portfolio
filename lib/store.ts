@@ -1,17 +1,33 @@
 import { promises as fs } from "fs";
 import path from "path";
 import { randomUUID } from "crypto";
+import { get as blobGet, put as blobPut } from "@vercel/blob";
 import { getDb } from "./db";
 import { defaultSettings, seedPages, seedPosts, seedProjects } from "./data";
 import type { Contact, Motif, Page, PageKey, Post, Project, Settings } from "./types";
 import { MOTIFS } from "./types";
 
 /**
- * Content store. Uses MongoDB when MONGODB_URI is set, otherwise JSON files in ./data.
- *  - data/content.json  projects, blog posts and site settings (safe to commit)
- *  - data/inbox.json    contact form messages (git-ignored: contains personal data)
+ * Content store.
+ *  - "mongodb": when MONGODB_URI is set.
+ *  - "blob":    on Vercel when a (private) Vercel Blob store is connected. The same two JSON
+ *               documents as file mode are kept in the store under cms/.
+ *  - "file":    JSON files in ./data (local development):
+ *      data/content.json  projects, blog posts and site settings (safe to commit)
+ *      data/inbox.json    contact form messages (git-ignored: contains personal data)
+ * CONTENT_STORE=file|blob forces a mode (MONGODB_URI still wins).
  */
-export const storageMode: "mongodb" | "file" = process.env.MONGODB_URI ? "mongodb" : "file";
+export type StorageMode = "mongodb" | "blob" | "file";
+
+function pickStorage(): StorageMode {
+  if (process.env.MONGODB_URI) return "mongodb";
+  const forced = process.env.CONTENT_STORE;
+  if (forced === "file" || forced === "blob") return forced;
+  const blobConnected = Boolean(process.env.BLOB_READ_WRITE_TOKEN || process.env.BLOB_STORE_ID);
+  return process.env.VERCEL && blobConnected ? "blob" : "file";
+}
+
+export const storageMode: StorageMode = pickStorage();
 
 export class StoreError extends Error {
   constructor(message: string, public status = 503) {
@@ -89,7 +105,7 @@ function serialized<T>(fn: () => Promise<T>): Promise<T> {
   return run;
 }
 
-async function readJson<T>(file: string, fallback: () => T): Promise<T> {
+async function readLocalJson<T>(file: string, fallback: () => T): Promise<T> {
   try {
     return JSON.parse(await fs.readFile(file, "utf8")) as T;
   } catch (e) {
@@ -98,14 +114,68 @@ async function readJson<T>(file: string, fallback: () => T): Promise<T> {
   }
 }
 
+/* Vercel Blob (private store). A page render reads the content several times, so parsed
+ * documents are memoised for a few seconds per instance; writes refresh the memo. */
+const blobPath = (file: string) => `cms/${path.basename(file)}`;
+const BLOB_MEMO_MS = 3000;
+const blobMemo = new Map<string, { at: number; value: unknown }>();
+
+async function readBlobJson<T>(file: string, fallback: () => T): Promise<T> {
+  const key = blobPath(file);
+  const hit = blobMemo.get(key);
+  if (hit && Date.now() - hit.at < BLOB_MEMO_MS) return structuredClone(hit.value) as T;
+  let text: string | null = null;
+  try {
+    const result = await blobGet(key, { access: "private", useCache: false });
+    if (result && result.statusCode === 200) text = await new Response(result.stream).text();
+  } catch (e) {
+    console.error("[store] Blob read failed:", e);
+    throw new StoreError("Could not reach content storage. Please try again.");
+  }
+  let value: T;
+  if (text === null) {
+    value = await readLocalJson(file, fallback); // first run: start from the bundled content
+  } else {
+    try {
+      value = JSON.parse(text) as T;
+    } catch {
+      throw new StoreError(`Stored ${path.basename(file)} is corrupted.`);
+    }
+  }
+  blobMemo.set(key, { at: Date.now(), value });
+  return structuredClone(value);
+}
+
+async function writeBlobJson(file: string, data: unknown) {
+  const key = blobPath(file);
+  try {
+    await blobPut(key, JSON.stringify(data, null, 2), {
+      access: "private",
+      allowOverwrite: true,
+      addRandomSuffix: false,
+      contentType: "application/json",
+      cacheControlMaxAge: 60
+    });
+  } catch (e) {
+    console.error("[store] Blob write failed:", e);
+    throw new StoreError("Could not save to content storage. Please try again.");
+  }
+  blobMemo.set(key, { at: Date.now(), value: structuredClone(data) });
+}
+
+async function readJson<T>(file: string, fallback: () => T): Promise<T> {
+  return storageMode === "blob" ? readBlobJson(file, fallback) : readLocalJson(file, fallback);
+}
+
 async function writeJson(file: string, data: unknown) {
+  if (storageMode === "blob") return writeBlobJson(file, data);
   try {
     await fs.mkdir(DATA_DIR, { recursive: true });
     const tmp = `${file}.${process.pid}.tmp`;
     await fs.writeFile(tmp, JSON.stringify(data, null, 2));
     await fs.rename(tmp, file);
   } catch {
-    throw new StoreError("Storage is read-only here. Set MONGODB_URI to edit content on this deployment.");
+    throw new StoreError("Storage is read-only here. Connect a Vercel Blob store (or set MONGODB_URI) to edit content on this deployment.");
   }
 }
 

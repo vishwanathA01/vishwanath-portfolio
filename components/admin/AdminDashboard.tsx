@@ -157,7 +157,7 @@ export default function AdminDashboard({
   initialMessages: Contact[];
   initialSettings: Settings;
   initialPages: Record<PageKey, Page>;
-  storage: "mongodb" | "file";
+  storage: "mongodb" | "blob" | "file";
   storageError: string;
 }) {
   const [tab, setTab] = useState<Tab>("overview");
@@ -265,7 +265,9 @@ export default function AdminDashboard({
               <p className="muted" style={{ marginTop: 8 }}>
                 {storage === "mongodb"
                   ? "Content is stored in MongoDB — changes go live immediately on every deployment."
-                  : "Content is stored in data/content.json (messages in data/inbox.json). Commit content.json to publish your projects and posts with the code; set MONGODB_URI to edit content on a live deployment."}
+                  : storage === "blob"
+                    ? "Content is stored in a private Vercel Blob store — your edits and contact messages are saved on the live site and survive redeploys."
+                    : "Content is stored in data/content.json (messages in data/inbox.json). Commit content.json to publish your projects and posts with the code; connect a Vercel Blob store or set MONGODB_URI to edit content on a live deployment."}
               </p>
             </div>
             {unread > 0 && (

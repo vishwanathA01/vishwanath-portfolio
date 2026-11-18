@@ -1,10 +1,11 @@
 import { GitFork, Github, Star } from "lucide-react";
-import { getGitHubSummary } from "@/lib/github";
+import ContributionGraph from "@/components/site/ContributionGraph";
+import { getContributions, getGitHubSummary } from "@/lib/github";
 import { formatDate } from "@/lib/media";
 
 /** Live GitHub stats. Renders nothing when no username is configured or GitHub is unreachable. */
 export default async function GitHubSection({ username }: { username: string; index?: string }) {
-  const data = await getGitHubSummary(username);
+  const [data, contributions] = await Promise.all([getGitHubSummary(username), getContributions(username)]);
   if (!data) return null;
   const { user, repos, languages, stars, forks } = data;
   const shades = ["#ff6600", "#222222", "#16a34a", "#7c3aed", "#0ea5e9", "#a3a3a3"];
@@ -20,6 +21,7 @@ export default async function GitHubSection({ username }: { username: string; in
           </div>
           <p data-reveal>Pulled straight from my public GitHub profile, refreshed automatically.</p>
         </div>
+        {contributions && <ContributionGraph data={contributions} username={data.user.login} />}
         <div className="gh-grid">
           <div className="gh-profile" data-reveal>
             <div className="gh-head">

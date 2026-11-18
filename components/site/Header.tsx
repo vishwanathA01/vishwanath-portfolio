@@ -10,6 +10,7 @@ export const NAV = [
   { label: "Writing", href: "/blog" },
   { label: "Now", href: "/now" },
   { label: "About", href: "/about" },
+  { label: "Résumé", href: "/resume" },
   { label: "Contact", href: "/contact" }
 ];
 
@@ -44,7 +45,7 @@ export default function Header({ name, role }: { name: string; role: string }) {
   const isCurrent = (href: string) => href !== "/" && pathname.startsWith(href);
 
   return (
-    <header className="header" data-scrolled={scrolled || open}>
+    <header className="header" data-scrolled={scrolled || open} style={{ viewTransitionName: "site-header" }}>
       <div className="header-inner">
         <Link href="/" className="brand" aria-label={`${name} — home`}>
           <span>

@@ -88,3 +88,81 @@ export async function getGitHubSummary(username: string): Promise<GitHubSummary 
     forks: repos.reduce((a, r) => a + r.forks_count, 0)
   };
 }
+
+export type ContributionDay = { date: string; level: number; count: number };
+export type Contributions = {
+  days: ContributionDay[];
+  total: number;
+  currentStreak: number;
+  longestStreak: number;
+  best: ContributionDay | null;
+  activeDays: number;
+};
+
+const contribCache = new Map<string, { at: number; value: Contributions | null }>();
+
+/**
+ * Contribution calendar for the last year, read from GitHub's public profile calendar
+ * (the same HTML github.com renders on profile pages — no token needed).
+ * Returns null if GitHub is unreachable or the markup changes, so the UI simply hides the graph.
+ */
+export async function getContributions(username: string): Promise<Contributions | null> {
+  if (!username || !validUser(username)) return null;
+  const hit = contribCache.get(username);
+  if (hit && Date.now() - hit.at < TTL) return hit.value;
+  let value: Contributions | null = null;
+  try {
+    const res = await fetch(`https://github.com/users/${username}/contributions`, {
+      headers: { "User-Agent": "portfolio-site", Accept: "text/html" },
+      next: { revalidate: 3600 },
+      signal: AbortSignal.timeout(6000)
+    });
+    if (res.ok) value = parseContributions(await res.text());
+  } catch {
+    value = null;
+  }
+  contribCache.set(username, { at: Date.now(), value });
+  return value;
+}
+
+export function parseContributions(html: string): Contributions | null {
+  const counts = new Map<string, number>();
+  for (const m of html.matchAll(/<tool-tip\b[^>]*\bfor="([^"]+)"[^>]*>([^<]*)<\/tool-tip>/g)) {
+    const n = m[2].match(/^\s*(\d[\d,]*)\s+contribution/);
+    counts.set(m[1], n ? Number(n[1].replace(/,/g, "")) : 0);
+  }
+  const days: ContributionDay[] = [];
+  for (const m of html.matchAll(/<td\b[^>]*class="ContributionCalendar-day"[^>]*>/g)) {
+    const tag = m[0];
+    const date = tag.match(/data-date="(\d{4}-\d{2}-\d{2})"/)?.[1];
+    const level = Number(tag.match(/data-level="(\d)"/)?.[1] ?? NaN);
+    const id = tag.match(/\bid="([^"]+)"/)?.[1] || "";
+    if (!date || Number.isNaN(level)) continue;
+    days.push({ date, level, count: counts.get(id) ?? (level > 0 ? 1 : 0) });
+  }
+  if (days.length < 7) return null;
+  days.sort((a, b) => a.date.localeCompare(b.date));
+
+  let longest = 0;
+  let run = 0;
+  for (const d of days) {
+    run = d.count > 0 ? run + 1 : 0;
+    longest = Math.max(longest, run);
+  }
+  // Current streak counts back from today; an empty "today" doesn't break it yet.
+  let current = 0;
+  for (let i = days.length - 1; i >= 0; i--) {
+    if (days[i].count > 0) current++;
+    else if (i === days.length - 1) continue;
+    else break;
+  }
+  const best = days.reduce<ContributionDay | null>((b, d) => (d.count > (b?.count ?? 0) ? d : b), null);
+  return {
+    days,
+    total: days.reduce((a, d) => a + d.count, 0),
+    currentStreak: current,
+    longestStreak: longest,
+    best,
+    activeDays: days.filter(d => d.count > 0).length
+  };
+}

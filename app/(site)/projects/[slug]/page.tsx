@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, ArrowRight, ExternalLink, Github } from "lucide-react";
+import Shot from "@/components/site/Shot";
 import { Markdown } from "@/lib/markdown";
 import { projectGallery, projectImage } from "@/lib/media";
 import { getProject, listProjects } from "@/lib/store";
@@ -14,8 +15,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   const p = await getProject(slug).catch(() => null);
   if (!p) return { title: "Project not found" };
-  const image = projectImage(p);
-  return { title: p.name, description: p.tagline || p.description, openGraph: { title: p.name, description: p.tagline || p.description, ...(image ? { images: [image] } : {}) } };
+  return { title: p.name, description: p.tagline || p.description, openGraph: { title: p.name, description: p.tagline || p.description } };
 }
 
 export default async function ProjectPage({ params }: Props) {
@@ -56,7 +56,7 @@ export default async function ProjectPage({ params }: Props) {
 
         {image && (
           <figure style={{ margin: "34px 0 0" }}>
-            <div className="project-hero"><img src={image} alt={`${p.name} screenshot`} /></div>
+            <div className="project-hero"><Shot slug={p.slug}><img src={image} alt={`${p.name} screenshot`} /></Shot></div>
           </figure>
         )}
 

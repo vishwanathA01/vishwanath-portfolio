@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Github, Linkedin, Mail, Rss, Twitter } from "lucide-react";
+import LocalTime from "@/components/site/LocalTime";
 import type { Settings } from "@/lib/types";
 
 export default function Footer({ name, settings, githubUrl }: { name: string; settings: Settings; githubUrl: string }) {
@@ -9,6 +10,7 @@ export default function Footer({ name, settings, githubUrl }: { name: string; se
         <div className="footer-brand">
           <strong>{name}</strong>
           <span>{new Date().getFullYear()} · <a href={`mailto:${settings.email}`}>{settings.email}</a></span>
+          <span className="footer-time">{settings.location} · <LocalTime /></span>
         </div>
         <nav className="footer-nav" aria-label="Footer">
           <Link href="/about">About</Link>
@@ -16,7 +18,7 @@ export default function Footer({ name, settings, githubUrl }: { name: string; se
           <Link href="/blog">Writing</Link>
           <Link href="/now">Now</Link>
           <Link href="/contact">Contact</Link>
-          {settings.resume && <a href={settings.resume} target="_blank" rel="noreferrer">Résumé</a>}
+          <Link href="/resume">Résumé</Link>
         </nav>
         <div className="socials">
           {settings.linkedin && <a href={settings.linkedin} target="_blank" rel="noreferrer" aria-label="LinkedIn"><Linkedin size={16} /></a>}
