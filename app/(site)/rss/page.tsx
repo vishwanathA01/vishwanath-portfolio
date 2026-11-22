@@ -1,21 +1,20 @@
 import type { Metadata } from "next";
-import { headers } from "next/headers";
 import Link from "next/link";
 import { ExternalLink, Rss } from "lucide-react";
 import CopyField from "@/components/site/CopyField";
+import FeedlyButton from "@/components/site/FeedlyButton";
 import MoreLinks from "@/components/site/MoreLinks";
 import { PostLines } from "@/components/site/PostList";
 import { profile } from "@/lib/data";
 import { toPostCard } from "@/lib/media";
 import { listPosts } from "@/lib/store";
+import { feedPath, siteOrigin } from "@/lib/site";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Subscribe via RSS", description: `Follow new writing by ${profile.name} in your feed reader.` };
 
 export default async function RssPage() {
-  const h = await headers();
-  const origin = process.env.NEXT_PUBLIC_SITE_URL || `${h.get("x-forwarded-proto") || "http"}://${h.get("x-forwarded-host") || h.get("host")}`;
-  const feedUrl = `${origin.replace(/\/$/, "")}/feed.xml`;
+  const feedUrl = `${await siteOrigin()}${feedPath}`;
   const posts = await listPosts().catch(() => []);
   const enc = encodeURIComponent(feedUrl);
 
@@ -32,7 +31,7 @@ export default async function RssPage() {
           <span className="eyebrow">Feed address</span>
           <CopyField value={feedUrl} />
           <div className="hero-actions" style={{ marginTop: 6 }}>
-            <a className="btn btn-ghost btn-sm" href={`https://feedly.com/i/subscription/feed/${enc}`} target="_blank" rel="noreferrer">Open in Feedly <ExternalLink size={13} /></a>
+            <FeedlyButton feedUrl={feedUrl} variant="solid" />
             <a className="btn btn-ghost btn-sm" href={`https://www.inoreader.com/?add_feed=${enc}`} target="_blank" rel="noreferrer">Open in Inoreader <ExternalLink size={13} /></a>
             <a className="btn btn-ghost btn-sm" href="/feed.xml" target="_blank" rel="noreferrer">View raw feed <ExternalLink size={13} /></a>
           </div>

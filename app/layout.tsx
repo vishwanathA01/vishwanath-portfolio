@@ -14,8 +14,8 @@ export const metadata: Metadata = {
   authors: [{ name: profile.name }],
   manifest: "/manifest.webmanifest",
   alternates: { types: { "application/rss+xml": [{ url: "/feed.xml", title: `${profile.name} — Blog` }] } },
-  openGraph: { title: `${profile.name} — Portfolio`, description: profile.summary, type: "website", siteName: profile.name, images: [{ url: "/profile.jpg", width: 800, height: 800, alt: profile.name }] },
-  twitter: { card: "summary", title: `${profile.name} — Portfolio`, description: profile.summary, images: ["/profile.jpg"] }
+  openGraph: { title: `${profile.name} — Portfolio`, description: profile.summary, type: "website", siteName: profile.name, locale: "en_IN" },
+  twitter: { card: "summary_large_image" }
 };
 
 export const viewport: Viewport = {

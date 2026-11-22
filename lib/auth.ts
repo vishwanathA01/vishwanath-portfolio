@@ -3,9 +3,15 @@ import bcrypt from "bcryptjs";
 import { cookies } from "next/headers";
 
 const cookieName = "vt_admin";
-const secret = new TextEncoder().encode(process.env.AUTH_SECRET || "development-only-change-this-secret-now");
+// In production a real AUTH_SECRET is mandatory: the dev fallback is public in the repo,
+// so accepting it would let anyone forge an admin session.
+const isProd = process.env.NODE_ENV === "production";
+const rawSecret = process.env.AUTH_SECRET || (isProd ? "" : "development-only-change-this-secret-now");
+const secret = new TextEncoder().encode(rawSecret);
+const authConfigured = rawSecret.length >= 32;
 
 export async function verifyAdmin(email: string, password: string) {
+  if (!authConfigured) return false;
   const expectedEmail = process.env.ADMIN_EMAIL || "";
   const expectedPassword = process.env.ADMIN_PASSWORD || "";
   if (!expectedEmail || !expectedPassword) return false;
@@ -23,6 +29,7 @@ export async function createSession() {
 }
 
 export async function isAdmin() {
+  if (!authConfigured) return false;
   const token = (await cookies()).get(cookieName)?.value;
   if (!token) return false;
   try {

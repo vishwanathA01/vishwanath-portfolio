@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { ArrowUpRight, ExternalLink, Github } from "lucide-react";
 import Cover from "@/components/Cover";
 import type { ProjectCard } from "@/lib/types";
+import Shot from "./Shot";
 
 /** Staggered image heights, like a printed contact sheet. */
 const RATIOS = [0.94, 0.86, 0.94, 0.75, 0.8, 0.75];
@@ -13,7 +14,7 @@ export function ProjectTile({ p, index }: { p: ProjectCard; index: number }) {
     <article className="work-card" data-reveal style={{ ["--d" as string]: `${(index % 3) * 0.08}s` }}>
       <div className="work-media" style={{ aspectRatio: RATIOS[index % RATIOS.length] }}>
         {p.featured && <span className="work-badge">Featured</span>}
-        {p.imageSrc ? <img src={p.imageSrc} alt={`${p.name} preview`} loading="lazy" /> : <Cover motif={p.motif} seed={p.slug} />}
+        {p.imageSrc ? <Shot slug={p.slug}><img src={p.imageSrc} alt={`${p.name} preview`} loading="lazy" /></Shot> : <Cover motif={p.motif} seed={p.slug} />}
       </div>
       <div className="work-cap">
         <h3><Link href={`/projects/${p.slug}`}>{p.name}</Link></h3>

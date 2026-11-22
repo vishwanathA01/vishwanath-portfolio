@@ -1,6 +1,7 @@
 import { LogoDraw } from "@/components/Logo";
 import Assistant from "@/components/site/Assistant";
 import CommandPalette from "@/components/site/CommandPalette";
+import Enhancements from "@/components/site/Enhancements";
 import Footer from "@/components/site/Footer";
 import Header from "@/components/site/Header";
 import Reveal from "@/components/site/Reveal";
@@ -36,6 +37,7 @@ export default async function SiteLayout({ children }: { children: React.ReactNo
         linkedin={settings.linkedin}
       />
       <Reveal />
+      <Enhancements />
     </div>
   );
 }

@@ -9,3 +9,6 @@ tsconfig.tsbuildinfo
 data/inbox.json
 data/*.tmp
 .next-build
+.vercel
+.env*
+!.env.example

@@ -1,5 +1,6 @@
 import { Fragment, type ReactNode } from "react";
 import { FlowFigure } from "@/components/FlowDiagram";
+import CodeBlock from "@/components/site/CodeBlock";
 
 /**
  * Tiny, dependency-free Markdown renderer that outputs React elements (never raw HTML).
@@ -66,7 +67,7 @@ export function Markdown({ source, className = "prose" }: { source: string; clas
       while (i < lines.length && !lines[i].startsWith("```")) code.push(lines[i++]);
       i++;
       if (lang === "flow") blocks.push(<FlowFigure key={key++} source={code.join("\n")} />);
-      else blocks.push(<pre key={key++} data-lang={lang || undefined}><code>{code.join("\n")}</code></pre>);
+      else blocks.push(<CodeBlock key={key++} lang={lang || undefined} code={code.join("\n")} />);
       continue;
     }
 
