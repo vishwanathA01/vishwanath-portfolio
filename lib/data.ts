@@ -37,7 +37,7 @@ export const defaultSettings: Settings = {
   /** Proof cards under the hero. Edit them in Admin → Settings (e.g. hackathons, certifications, internships). */
   highlights: [
     { label: "Education", title: "B.Tech CSE · 3rd year", url: "/about" },
-    { label: "Projects", title: "7 projects across AI, web & EdTech", url: "/projects" },
+    { label: "Projects", title: "9 projects across AI, web & EdTech", url: "/projects" },
     { label: "Writing", title: "Notes on building & design", url: "/blog" },
     { label: "Right now", title: "Open to internships", url: "/now" }
   ]
@@ -173,6 +173,54 @@ export const seedProjects: Project[] = [
     updatedAt: seedTime
   },
   {
+    slug: "skillorbitlab",
+    name: "SkillOrbitLab",
+    tagline: "A full-stack agency website with its own API and admin panel for content and leads.",
+    category: "Web · Full-stack",
+    year: "2026",
+    status: "Live",
+    role: "Full-stack developer",
+    description: "A full-stack website for an AI and software agency: a React marketing site with 28 service pages, case studies, a blog and careers, backed by an Express + MongoDB API and a separate React admin panel for editing content and handling enquiries and job applications.",
+    problem: "An agency website has to win trust and turn visitors into enquiries, but most are static brochures: content changes need a developer, and leads and CVs end up scattered across email inboxes.",
+    outcome: "A fast, SEO-ready site that the team can update from an admin panel, with validated lead and application forms that land in searchable inboxes with statuses, notes and CSV export.",
+    content:
+      "## The constraint\nAn agency site has two jobs: explain a wide range of services clearly enough to earn trust, and turn that trust into enquiries the team can actually follow up. Static brochure sites fail the second job — every copy change needs a developer, and enquiries and CVs get lost in email.\n\n## What I built\nA monorepo with three apps that share one REST API.\n\n- **Marketing site (React + Vite).** A tabbed services mega menu, an animated AI-workflow hero, 28 service pages generated from one data-driven template, industry pages, case studies with metric tiles and architecture diagrams, a blog, FAQs and careers.\n- **API (Express + MongoDB).** Persists case studies, posts, roles, FAQs, testimonials, enquiries and applications, with Zod-validated forms, a honeypot spam trap, rate limiting and optional SMTP notifications.\n- **Admin panel (React).** JWT sign-in, a dashboard with counters and recent activity, inboxes for enquiries and applications (status tabs, search, notes, CV download, CSV export) and editors for every content type.\n- **SEO built in.** Per-page titles, canonical URLs, Open Graph tags, JSON-LD for the organisation, FAQs, articles and breadcrumbs, plus a generated sitemap.\n\n```flow\ntitle: High-level flow — from a visitor’s enquiry to the team’s inbox.\nlanes: 01 / Visitor | 02 / React site | 03 / Express API | 04 / MongoDB | 05 / Admin panel\nvisitor: Visitor / services, case studies @1 input\nsite: Marketing site / React + Vite @2\nform: Lead & CV forms / field-level errors @2.2\napi: Express API / Zod, rate limits @3\nmail: SMTP / new-lead alerts @3.2\ndb: MongoDB / content, enquiries @4 store\nadmin: Admin panel / inboxes, editors @5 accent\nvisitor -> site: browse\nsite -> form: start a project\nform -> api: submit\napi ..> db: save\napi ~> mail: notify\ndb -> admin: follow up\n```\n\n## What was hard\n- **28 pages without 28 templates.** Four service categories with six sub-services each are rendered from one template and a single data file, so adding a service is a data change, not new code.\n- **Forms that resist spam but stay friendly.** Server-side validation returns field-level errors, while the honeypot, rate limits and CV content-type checks block abuse without a CAPTCHA.\n- **Working without the API.** The site falls back to bundled content when the API is unreachable, so pages never render empty.\n\n## What I’d do differently\nMove CV uploads to object storage from the start, and replace the clearly labelled sample case studies and testimonials with real client work as it ships.",
+    features: ["28 service pages from one data-driven template, with a tabbed mega menu", "Case studies with metric tiles and architecture flow diagrams", "Blog with categories, table of contents and related posts", "Careers with role pages and a CV-upload application form", "Admin panel: enquiry and application inboxes, CSV export and content editors", "Per-page SEO, JSON-LD structured data and a generated sitemap"],
+    stack: ["React", "Vite", "Node.js", "Express", "MongoDB", "Zod", "JWT"],
+    link: "https://skillorbitlab.vercel.app",
+    github: "",
+    image: "/projects/skillorbitlab/cover.jpg",
+    gallery: ["/projects/skillorbitlab/1.jpg", "/projects/skillorbitlab/2.jpg", "/projects/skillorbitlab/3.jpg"],
+    motif: "network",
+    featured: true,
+    order: 5,
+    updatedAt: seedTime
+  },
+  {
+    slug: "visioncart",
+    name: "VisionCart AI",
+    tagline: "Point your camera at anything — real-time product and object recognition in the browser.",
+    category: "AI · Computer vision",
+    year: "2026",
+    status: "Live",
+    role: "Full-stack developer",
+    description: "A product recognition platform that finds the object in a photo or live camera feed, describes it as a 527-dimension visual embedding, reads barcodes and optionally asks Gemini to read brands and printed text — then fuses every signal into one calibrated match score against a catalogue.",
+    problem: "Finding a product from a photo usually means typing guesses into a search box. Pure image similarity is easily fooled by lighting, angle and background, and raw similarity scores look like confidence when they aren’t.",
+    outcome: "A scanner that matches a photo to the right catalogue product in milliseconds, shows a calibrated high, medium or low confidence with the reasons behind it, and works live at about five predictions a second.",
+    content:
+      "## The constraint\nRecognising a product from a phone photo is harder than it looks. The same sneaker on concrete, on a table or half in shadow produces very different pixels, and a cosine similarity of 0.8 means nothing to a shopper. The system has to be fast enough to run live, honest about how sure it is, and useful even when the item isn’t in the catalogue.\n\n## What I built\nThree services: a React app, an Express + MongoDB API, and a Python FastAPI service that does the vision work. The browser only ever talks to the API; the API calls the AI service with a shared secret.\n\n- **Localise, then describe.** The object is found and cropped before matching, then described as a 527-dimension vector from colour, spatial colour, gradient (HOG), texture (LBP) and silhouette features — about 50 ms on a CPU with no model downloads.\n- **Several signals, one score.** EAN-13, UPC-A and EAN-8 barcodes are decoded in pure numpy, and optional Gemini vision returns schema-validated JSON with brand, model and printed text. Everything is fused into a single ranking, and an exact barcode beats everything.\n- **Calibrated confidence.** Scores are normalised against the catalogue’s own similarity distribution and labelled high, medium or low, with a per-signal breakdown.\n- **Live scan.** About five predictions a second, a tracking box that follows the object, and matches smoothed across frames. Gemini is called only when the scene changes and the camera holds still, and frames are never stored.\n- **A real platform around it.** Async jobs with live progress over Server-Sent Events, a catalogue with faceted search and shop-by-colour, a developer API with scoped keys and quotas, and an admin console with analytics and an audit log.\n\n```flow\ntitle: High-level flow — from a photo to a calibrated match.\nlanes: 01 / Input | 02 / React app | 03 / Express API | 04 / AI service | 05 / Result\nphoto: Photo or camera / upload, live frames @1 input\napp: VisionCart app / React + Zustand @2\napi: Express API / jobs, SSE, auth @3\ngemini: Gemini vision / brands, printed text @3.2 accent\nai: FastAPI service / crop, embed, barcode @4\ndb: MongoDB / catalogue index @4.2 store\nmatch: Ranked match / score + reasons @5 accent\nphoto -> app: image\napp -> api: upload\napi -> ai: analyse\napi ~> gemini: optional\nai ..> db: 527-d vector\nai -> match: fused signals\n```\n\n## What was hard\n- **Making a score mean something.** Raw similarity is never shown as a probability; calibrating against the catalogue’s own distribution is what makes “high confidence” trustworthy.\n- **Live without waste.** Re-calling an AI model on every frame would be slow and costly, so it only runs when the scene changes and the camera is steady.\n- **Learning from feedback.** A confirmed scan is added to the visual index, so similar photos match better next time.\n- **Security.** Rotating refresh tokens that revoke the whole session on replay, magic-byte upload checks and CSV formula-injection guards.\n\n## What I’d do differently\nSwap the hand-built descriptors for a small learned embedding model once there is enough confirmed scan data to evaluate it against.",
+    features: ["Live camera recognition at about 5 predictions a second", "527-d visual embedding with object localisation and cropping", "Barcode decoding (EAN-13, UPC-A, EAN-8) and optional Gemini vision", "Calibrated confidence with a per-signal breakdown and reasons", "Catalogue with faceted search, shop-by-colour and search by image", "Developer API with scoped keys and quotas, plus an admin console"],
+    stack: ["React", "Vite", "Zustand", "Node.js", "Express", "MongoDB", "Python", "FastAPI", "Gemini API"],
+    link: "https://visioncart-pi.vercel.app",
+    github: "https://github.com/vishwanathA01/visioncart-ai",
+    image: "/projects/visioncart/cover.jpg",
+    gallery: ["/projects/visioncart/1.jpg", "/projects/visioncart/2.jpg", "/projects/visioncart/3.jpg"],
+    motif: "radial",
+    featured: true,
+    order: 6,
+    updatedAt: seedTime
+  },
+  {
     slug: "ironx",
     name: "IRONX",
     tagline: "Gym management for members, trainers and admins — built with PHP and MySQL.",
@@ -193,7 +241,7 @@ export const seedProjects: Project[] = [
     gallery: [],
     motif: "bars",
     featured: true,
-    order: 5,
+    order: 7,
     updatedAt: seedTime
   },
   {
@@ -217,7 +265,7 @@ export const seedProjects: Project[] = [
     gallery: ["/projects/rangsutra/1.jpg", "/projects/rangsutra/2.jpg", "/projects/rangsutra/3.jpg"],
     motif: "radial",
     featured: false,
-    order: 6,
+    order: 8,
     updatedAt: seedTime
   },
   {
@@ -241,7 +289,7 @@ export const seedProjects: Project[] = [
     gallery: ["/projects/flowgrid/1.jpg", "/projects/flowgrid/2.jpg", "/projects/flowgrid/3.jpg", "/projects/flowgrid/4.jpg"],
     motif: "flow",
     featured: false,
-    order: 7,
+    order: 9,
     updatedAt: seedTime
   }
 ];
